@@ -1,5 +1,4 @@
 
-
 # iot_supervise
 
 Projet 1 mini-station météo
@@ -135,7 +134,7 @@ ou
 
 c) État DEL publié
 
-Dans le code actuel, l’état de la DEL est publié en texte simple :
+Dans le code , l’état de la DEL est publié en texte simple :
 
 on
 
@@ -211,35 +210,13 @@ mosquitto_sub -h localhost -p 1883 -t "ahuntsic/aec-iot/b3/iot_supervise/pi_iot/
 
 Ouvrir MariaDB
 
-sudo mariadb
+sudo mariadb -u iot_sup -p
 
 Sélectionner la base
 
-USE iot_b3;
+USE iot_supervise;
 
-Vérifier les 10 dernières mesures
-
-SELECT id, ts_utc, device, topic, value, unit
-FROM telemetry
-ORDER BY id DESC
-LIMIT 10;
-
-Vérifier les 10 derniers événements
-
-SELECT id, ts_utc, device, kind, topic, payload
-FROM events
-ORDER BY id DESC
-LIMIT 10;
-
-Vérifier le volume total
-
-SELECT
-  (SELECT COUNT(*) FROM telemetry) AS n_telemetry,
-  (SELECT COUNT(*) FROM events) AS n_events;
-
-Requêtes utiles supplémentaires
-
-Dernières mesures de température
+Vérifier les 20 dernières températures
 
 SELECT ts_utc, value, unit
 FROM telemetry
@@ -247,20 +224,20 @@ WHERE device='pi_iot' AND topic LIKE '%/sensors/temperature'
 ORDER BY ts_utc DESC
 LIMIT 20;
 
-Dernières commandes
+Vérifier les 20 dernières humidités
 
-SELECT ts_utc, payload
-FROM events
-WHERE device='pi_iot' AND kind='cmd'
+SELECT ts_utc, value, unit
+FROM telemetry
+WHERE device='pi_iot' AND topic LIKE '%/sensors/humidity'
 ORDER BY ts_utc DESC
 LIMIT 20;
 
-Nombre d’événements par type
+Vérifier les 10 derniers événements
 
-SELECT kind, COUNT(*) AS n
+SELECT ts_utc, kind, topic, payload
 FROM events
-GROUP BY kind
-ORDER BY n DESC;
+ORDER BY ts_utc DESC
+LIMIT 10;
 
 
 ⸻
