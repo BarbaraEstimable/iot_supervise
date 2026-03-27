@@ -180,4 +180,5 @@ finally:
     # Arrêt propre: on publie offline "normal"  
     client.publish(TOPIC_ONLINE, "offline", qos=QOS_STATUS, retain=True)
     client.loop_stop()
+    sensor.exit()
     client.disconnect()
