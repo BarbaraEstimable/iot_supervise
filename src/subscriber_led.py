@@ -30,10 +30,10 @@ BROKER_HOST = "localhost"
 BROKER_PORT = 1883
 KEEPALIVE_S = 60
 
-TEAM = "demo"
-DEVICE = "pi01"
+TEAM = "iot_supervise"
+DEVICE = "pi_iot"
 
-CLIENT_ID = "b3-sub-pi01-led"
+CLIENT_ID = "b3-sub-pi_iot-led"
 
 LED_PIN_BCM = 17
 led = LED(LED_PIN_BCM)
