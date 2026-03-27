@@ -83,7 +83,7 @@ def on_disconnect(client, userdata, reason_code, properties=None):
     """
     global connected
     print(f"[DISCONNECT] reason_code={reason_code}")
-    connected = False
+    connected = (reason_code != 0)
 
 
 # ---------------------------------------------------------------------
