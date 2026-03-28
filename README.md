@@ -9,7 +9,8 @@ Le but du projet est de faire un petit système IoT sur Raspberry Pi avec MQTT, 
 
 Le système doit :
 - publier une mesure de température sur MQTT ;
-- afficher cette mesure dans MQTT Dash ;
+- publier une mesure d’humidité sur MQTT ;
+- afficher ces mesures dans MQTT Dash ;
 - recevoir une commande ON/OFF pour une DEL ;
 - publier l’état réel de la DEL ;
 - enregistrer les mesures et les événements dans MariaDB.
@@ -22,6 +23,7 @@ Le système doit :
                  +----------------------+
                  |   MQTT Dash (mobile) |
                  | - lit la température |
+                 | - lit l’humidité     |
                  | - envoie cmd DEL     |
                  +----------+-----------+
                             |
@@ -29,10 +31,10 @@ Le système doit :
                             v
 +-------------------+   +-------------------+   +----------------------+
 | Publisher         |   | Mosquitto Broker  |   | Subscriber LED       |
-| température       +-->+ localhost:1883    +-->+ - reçoit cmd         |
-| Raspberry Pi      |   |                   |   | - commande la DEL    |
-| - JSON température|   |                   |   | - publie state       |
-| - value dashboard |   +---------+---------+   +----------+-----------+
+| Raspberry Pi      +-->+ localhost:1883    +-->+ - reçoit cmd         |
+| - JSON température|   |                   |   | - commande la DEL    |
+| - JSON humidité   |   |                   |   | - publie state       |
+| - values dashboard|   +---------+---------+   +----------+-----------+
 | - status online   |             |                        |
 +-------------------+             |                        |
                                   |                        v
@@ -60,8 +62,10 @@ ahuntsic/aec-iot/b3/iot_supervise/pi_iot/
 Topics utilisés
 
 Rôle	Topic
-Télémétrie JSON	ahuntsic/aec-iot/b3/iot_supervise/pi_iot/sensors/temperature
-Valeur simple dashboard	ahuntsic/aec-iot/b3/iot_supervise/pi_iot/sensors/temperature/value
+Télémétrie température JSON	ahuntsic/aec-iot/b3/iot_supervise/pi_iot/sensors/temperature
+Valeur température dashboard	ahuntsic/aec-iot/b3/iot_supervise/pi_iot/sensors/temperature/value
+Télémétrie humidité JSON	ahuntsic/aec-iot/b3/iot_supervise/pi_iot/sensors/humidity
+Valeur humidité dashboard	ahuntsic/aec-iot/b3/iot_supervise/pi_iot/sensors/humidity/value
 Commande DEL	ahuntsic/aec-iot/b3/iot_supervise/pi_iot/actuators/led/cmd
 État DEL	ahuntsic/aec-iot/b3/iot_supervise/pi_iot/actuators/led/state
 Statut online	ahuntsic/aec-iot/b3/iot_supervise/pi_iot/status/online
@@ -72,6 +76,8 @@ src/publisher_sensor.py
 Publie :
 	•	.../sensors/temperature
 	•	.../sensors/temperature/value
+	•	.../sensors/humidity
+	•	.../sensors/humidity/value
 	•	.../status/online
 
 Client ID utilisé :
@@ -94,6 +100,7 @@ S’abonne à :
 MQTT Dash
 S’abonne à :
 	•	.../sensors/temperature/value
+	•	.../sensors/humidity/value
 	•	.../actuators/led/state
 	•	.../status/online
 
@@ -120,7 +127,17 @@ a) Température publiée
   "ts": "2026-03-18T18:30:12.120Z"
 }
 
-b) Commande DEL envoyée
+b) Humidité publiée
+
+{
+  "device": "pi_iot",
+  "sensor": "humidity",
+  "value": 54.80,
+  "unit": "%",
+  "ts": "2026-03-18T18:30:15.120Z"
+}
+
+c) Commande DEL envoyée
 
 {
   "state": "on"
@@ -132,7 +149,7 @@ ou
   "state": "off"
 }
 
-c) État DEL publié
+d) État DEL publié
 
 Dans le code , l’état de la DEL est publié en texte simple :
 
@@ -203,6 +220,14 @@ Vérifier la température
 
 mosquitto_sub -h localhost -p 1883 -t "ahuntsic/aec-iot/b3/iot_supervise/pi_iot/sensors/temperature/#" -v
 
+Vérifier l’humidité
+
+mosquitto_sub -h localhost -p 1883 -t "ahuntsic/aec-iot/b3/iot_supervise/pi_iot/sensors/humidity/#" -v
+
+Vérifier la valeur humidité pour MQTT Dash
+
+mosquitto_sub -h localhost -p 1883 -t "ahuntsic/aec-iot/b3/iot_supervise/pi_iot/sensors/humidity/value" -v
+
 
 ⸻
 
@@ -234,9 +259,9 @@ LIMIT 20;
 
 Vérifier les 10 derniers événements
 
-SELECT ts_utc, kind, topic, payload
+SELECT id, ts_utc, device, kind, topic, payload
 FROM events
-ORDER BY ts_utc DESC
+ORDER BY id DESC
 LIMIT 10;
 
 
@@ -253,23 +278,42 @@ db/
   schema.sql
   queries.sql
 
+screenshots/
+  sql-temperature-1.png
+  sql-temperature-2.png
+  sql-humidity-1.png
+  sql-humidity-2.png
+  sql-events-1.png
+
 README.md
 requirements.txt
 
 
 ⸻
 
-9) Preuves à fournir
+9) Captures d’écran
 
-Le dépôt contient au minimum :
-	•	une capture MQTT Dash montrant la jauge ou la valeur numérique et le switch ;
-	•	une capture MariaDB avec une requête SELECT montrant des données réelles.
+Requête 1 — 20 dernières températures
+
+Requête 2 — 20 dernières humidités
+
+Requête 3 — 10 derniers événements
+
 
 ⸻
 
-10) Notes techniques
+10) Preuves à fournir
+
+Le dépôt contient au minimum :
+	•	une capture MQTT Dash montrant la température, l’humidité et le switch ;
+	•	une capture MariaDB avec des requêtes SELECT montrant des données réelles ;
+	•	une capture d’un test avec mosquitto_pub / mosquitto_sub.
+
+⸻
+
+11) Notes techniques
 	•	La télémétrie capteur est publiée régulièrement en JSON.
-	•	Le topic /value sert à simplifier l’affichage dans MQTT Dash.
+	•	Les topics /value servent à simplifier l’affichage dans MQTT Dash.
 	•	La commande DEL passe par .../cmd.
 	•	L’état réel de la DEL est republié sur .../state.
 	•	Le logger s’abonne au préfixe complet et enregistre les mesures dans telemetry ainsi que les commandes, états et statuts dans events.
