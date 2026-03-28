@@ -284,6 +284,7 @@ screenshots/
   sql-humidity-1.png
   sql-humidity-2.png
   sql-events-1.png
+  sql-events-2.png
 
 README.md
 requirements.txt
